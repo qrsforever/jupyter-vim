@@ -31,7 +31,8 @@ command! -buffer -nargs=1    JupyterSendCode        call jupyter#SendCode(<args>
 command! -buffer -count      JupyterSendCount       call jupyter#SendCount(<count>)
 command! -buffer -range -bar JupyterSendRange       <line1>,<line2>call jupyter#SendRange()
 command! -buffer -nargs=0    JupyterSendCell        call jupyter#SendCell()
-command! -buffer -nargs=0    JupyterUpdateShell     call jupyter#UpdateShell()
+command! -buffer -nargs=0    JupyterUpdateShell     call jupyter#UpdateShell(0)
+command! -buffer -nargs=0    JupyterUpdateVShell    call jupyter#UpdateShell(1)
 command! -buffer -nargs=? -complete=dir  JupyterCd  call jupyter#JupyterCd(<f-args>)
 command! -buffer -nargs=? -bang  JupyterTerminateKernel  call jupyter#TerminateKernel(<bang>0, <f-args>)
 
@@ -60,6 +61,7 @@ if g:jupyter_mapkeys
     vmap     <buffer> <silent> <localleader>e       <Plug>JupyterRunVisual
 
     nnoremap <buffer> <silent> <localleader>U       :JupyterUpdateShell<CR>
+    nnoremap <buffer> <silent> <localleader>u       :JupyterUpdateVShell<CR>
 
     " Debugging maps
     nnoremap <buffer> <silent> <localleader>b       :PythonSetBreak<CR>

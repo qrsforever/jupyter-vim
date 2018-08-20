@@ -217,13 +217,16 @@ def disconnect_from_kernel():
     kc.stop_channels()
     vim_echom("Client disconnected from kernel with pid = {}".format(pid))
 
-def update_console_msgs():
+def update_console_msgs(isvplit):
     """Grab pending messages and place them inside the vim console monitor."""
     # Save which window we're in
     cur_win = vim.eval('win_getid()')
 
     # Open the ipython terminal in vim, and move cursor to it
-    is_console_open = vim.eval('jupyter#OpenJupyterTerm()')
+    if isvplit:
+        is_console_open = vim.eval('jupyter#OpenJupyterTerm(1)')
+    else:
+        is_console_open = vim.eval('jupyter#OpenJupyterTerm(0)')
     if not is_console_open:
         vim_echom('__jupyter_term__ failed to open!', 'Error')
         return
@@ -333,9 +336,10 @@ def with_console(f):
             vim_echom('WARNING: Not connected to IPython!', 'WarningMsg')
             return
         monitor_console = bool(int(vim.vars.get('jupyter_monitor_console', 0)))
+        isvplit = bool(int(vim.vars.get('jupyter_vsplit', 1)))
         f(*args, **kwargs)
         if monitor_console:
-            update_console_msgs()
+            update_console_msgs(isvplit)
     return wrapper
 
 # Include verbose output to vim command line

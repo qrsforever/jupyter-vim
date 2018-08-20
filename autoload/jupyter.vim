@@ -116,8 +116,12 @@ function! jupyter#TerminateKernel(kill, ...) abort
     execute 'pythonx jupyter_vim.signal_kernel(jupyter_vim.signal.'.l:sig.')'
 endfunction
 
-function! jupyter#UpdateShell() abort 
-    pythonx jupyter_vim.update_console_msgs()
+function! jupyter#UpdateShell(isvsplit) abort 
+    if a:isvsplit
+        pythonx jupyter_vim.update_console_msgs(1)
+    else
+        pythonx jupyter_vim.update_console_msgs(0)
+    endif
 endfunction
 
 "----------------------------------------------------------------------------- 
@@ -172,7 +176,7 @@ function! jupyter#PythonDbstop()
     normal! Oimport pdb; pdb.set_trace()j
 endfunction
 
-function! jupyter#OpenJupyterTerm() abort 
+function! jupyter#OpenJupyterTerm(isvsplit) abort 
     " Set up console display window
     " If we're in the console display already, just go to the bottom.
     " Otherwise, create a new buffer in a split (or jump to it if open)
@@ -185,13 +189,15 @@ function! jupyter#OpenJupyterTerm() abort
             set switchbuf=useopen
             " let l:cmd = bufnr(term_buf) > 0 ? 'sbuffer' : 'new'
             " lidong mod beg
-            if g:jupyter_vsplit
+            if a:isvsplit == 1
                 let l:new_cmd = 'vnew'
+                let l:split_cmd = 'vertical sbuffer'
             else
                 let l:new_cmd = 'new'
+                let l:split_cmd = 'sbuffer'
             endif
+            let l:cmd = bufnr(term_buf) > 0 ? l:split_cmd : l:new_cmd
             " lidong mod end
-            let l:cmd = bufnr(term_buf) > 0 ? 'sbuffer' : l:new_cmd
             execute l:cmd . ' ' . term_buf
             let &switchbuf=save_swbuf
         catch
@@ -213,7 +219,10 @@ function! jupyter#OpenJupyterTerm() abort
     syn match JupyterPromptOut2 /^\.\.\.* /
     syn match JupyterMagic /^\]: \zs%\w\+/
 
-    hi JupyterPromptIn   ctermfg=Blue
+    " lidong mod beg
+    " hi JupyterPromptIn   ctermfg=Blue
+    hi JupyterPromptIn   ctermfg=Green
+    " lidong mod end
     hi JupyterPromptOut  ctermfg=Red
     hi JupyterPromptOut2 ctermfg=Grey
     hi JupyterMagic      ctermfg=Magenta
