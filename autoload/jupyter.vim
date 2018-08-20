@@ -183,7 +183,15 @@ function! jupyter#OpenJupyterTerm() abort
         try
             let save_swbuf=&switchbuf
             set switchbuf=useopen
-            let l:cmd = bufnr(term_buf) > 0 ? 'sbuffer' : 'new'
+            " let l:cmd = bufnr(term_buf) > 0 ? 'sbuffer' : 'new'
+            " lidong mod beg
+            if g:jupyter_vsplit
+                let l:new_cmd = 'vnew'
+            else
+                let l:new_cmd = 'new'
+            endif
+            " lidong mod end
+            let l:cmd = bufnr(term_buf) > 0 ? 'sbuffer' : l:new_cmd
             execute l:cmd . ' ' . term_buf
             let &switchbuf=save_swbuf
         catch
