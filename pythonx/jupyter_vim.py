@@ -248,7 +248,10 @@ def handle_messages():
     See also: <http://jupyter-client.readthedocs.io/en/stable/messaging.html>
     """
     io_pub = []
-    msgs = kc.iopub_channel.get_msgs(block=False)
+    # lidong mod beg
+    # msgs = kc.iopub_channel.get_msgs(block=False)
+    msgs = kc.iopub_channel.get_msgs()
+    # lidong mod end
     for msg in msgs:
         s = ''
         if 'msg_type' not in msg['header']:
@@ -429,18 +432,24 @@ def signal_kernel(sig=signal.SIGTERM):
     (non-functional) ipython interrupt mechanisms.
     Only works on posix.
     """
+    # lidong mod beg
     try:
         os.kill(pid, int(sig))
+        # vim_echom("kill pid {p:d} with signal #{v:d}, {n:s}"\
+        #          .format(p=pid, v=sig.value, n=sig.name), style='WarningMsg')
         vim_echom("kill pid {p:d} with signal #{v:d}, {n:s}"\
-                  .format(p=pid, v=sig.value, n=sig.name), style='WarningMsg')
+                  .format(p=pid, v=sig, n="todo"), style='WarningMsg')
     except ProcessLookupError:
         vim_echom(("pid {p:d} does not exist! " +
                    "Kernel may have been terminated by outside process")\
                   .format(p=pid), style='Error')
     except OSError as e:
+        # vim_echom("signal #{v:d}, {n:s} failed to kill pid {p:d}"\
+        #           .format(v=sig.value, n=sig.name, p=pid), style='Error')
         vim_echom("signal #{v:d}, {n:s} failed to kill pid {p:d}"\
-                  .format(v=sig.value, n=sig.name, p=pid), style='Error')
+                  .format(v=sig, n="todo", p=pid), style='Error')
         raise e
+    # lidong mod end
 
 #def set_breakpoint():
 #    send("__IP.InteractiveTB.pdb.set_break('%s',%d)" % (vim.current.buffer.name,
