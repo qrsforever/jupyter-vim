@@ -221,11 +221,11 @@ function! jupyter#OpenJupyterTerm(isvsplit) abort
 
     " lidong mod beg
     " hi JupyterPromptIn   ctermfg=Blue
-    hi JupyterPromptIn   ctermfg=Green
+    hi JupyterPromptIn   ctermfg=Green  guifg=Blue
     " lidong mod end
-    hi JupyterPromptOut  ctermfg=Red
-    hi JupyterPromptOut2 ctermfg=Grey
-    hi JupyterMagic      ctermfg=Magenta
+    hi JupyterPromptOut  ctermfg=Red    guifg=Red
+    hi JupyterPromptOut2 ctermfg=Grey   guifg=Grey
+    hi JupyterMagic      ctermfg=Magenta guifg=Magenta
 
     return 1
 endfunction
