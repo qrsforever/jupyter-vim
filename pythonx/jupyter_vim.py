@@ -253,6 +253,8 @@ def handle_messages():
     io_pub = []
     # lidong mod beg
     # msgs = kc.iopub_channel.get_msgs(block=False)
+    import time
+    time.sleep(0.5)
     msgs = kc.iopub_channel.get_msgs()
     # lidong mod end
     for msg in msgs:
@@ -388,7 +390,7 @@ def send_range():
     """Send a range of lines from the current vim buffer to the kernel."""
     r = vim.current.range
     lines = "\n".join(vim.current.buffer[r.start:r.end+1])
-    msg_id = send(lines)
+    msg_id = send(lines + "\n")
     prompt = "range %d-%d "% (r.start+1, r.end+1)
     return (prompt, msg_id)
 

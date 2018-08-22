@@ -66,6 +66,10 @@ if g:jupyter_mapkeys
     " Debugging maps
     nnoremap <buffer> <silent> <localleader>b       :PythonSetBreak<CR>
 
+    " lidong add beg
+    nnoremap <buffer> <silent> <localleader>c       :bwipeout! __jupyter_term__<CR>:JupyterUpdateVShell<CR>
+    " lidong add end
+
 endif
 "}}}
 
