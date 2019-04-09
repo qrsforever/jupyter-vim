@@ -20,18 +20,20 @@ import sys
 import textwrap
 from queue import Empty
 
-_install_instructions = """You *must* install IPython into the Python that
-your vim is linked against. If you are seeing this message, this usually means
-either (1) installing IPython using the system Python that vim is using, or
-(2) recompiling Vim against the Python where you already have IPython
-installed. This is only a requirement to allow Vim to speak with an IPython
-instance using IPython's own machinery. It does *not* mean that the IPython
-instance with which you communicate via vim-ipython needs to be running the
-same version of Python.
+_install_instructions = """You *must* install the jupyter package into the
+Python that your vim is linked against. If you are seeing this message, this
+usually means either: 
+    (1) installing Jupyter using the system Python that vim is using, or 
+    (2) recompiling Vim against the Python where you already have Jupyter
+        installed. 
+This is only a requirement to allow Vim to speak with a Jupyter kernel using
+Jupyter's own machinery. It does *not* mean that the Jupyter instance with
+which you communicate via jupyter-vim needs to be running the same version of
+Python.
 """
 
 try:
-    import IPython
+    import jupyter
 except ImportError:
     raise ImportError("Could not find kernel. " + _install_instructions)
 
@@ -76,7 +78,7 @@ def check_connection():
 # kernel pid. Otherwise, just check that we're connected to a kernel.
 if all([x in globals() for x in ('kc', 'pid', 'send')]):
     if not check_connection():
-        vim_echom('WARNING: Not connected to IPython!' + \
+        vim_echom('WARNING: Not connected to Jupyter!' + \
                   ' Run :JupyterConnect to find the kernel', style='WarningMsg')
 else:
     kc = None
@@ -121,26 +123,35 @@ class PythonToVimStr(unicode):
             s = self
         else:
             s = self.encode('UTF-8')
-        return '"%s"' % s.replace('\\', '\\\\').replace('"', r'\"')
+        return '"{:s}"'.format(s.replace('\\', '\\\\').replace('"', r'\"'))
 
-def set_pid():
-    """Explicitly ask the ipython kernel for its pid."""
+def get_pid(kernel_type):
+    """Explicitly ask the jupyter kernel for its pid."""
+    vim_echom("kernel_type = {}".format(kernel_type))
     the_pid = -1
-    code = 'import os; _pid = os.getpid()'
+    if kernel_type == 'python':
+        code = 'import os; _pid = os.getpid()'
+    elif kernel_type == 'julia':
+        code = '_pid = getpid()'
+    else:
+        code = '_pid = -1'
+        vim_echom("I don't know how to get the pid for a Jupyter kernel of"
+                  " type \"{}\"".format(kernel_type))
     msg_id = send(code, silent=True, user_expressions={'_pid':'_pid'})
 
     # wait to get message back from kernel
     try:
         reply = get_reply_msg(msg_id)
     except Empty:
-        vim_echom("no reply from IPython kernel", "WarningMsg")
+        vim_echom("no reply from jupyter kernel", "WarningMsg")
         return -1
 
     try:
+        # Requires the fix for https://github.com/JuliaLang/IJulia.jl/issues/815
         the_pid = int(reply['content']['user_expressions']\
                         ['_pid']['data']['text/plain'])
     except KeyError:
-        vim_echom("Could not get PID information, kernel not running Python?")
+        vim_echom("Could not get PID information, kernel not ready?")
 
     return the_pid
 
@@ -160,7 +171,7 @@ def strip_color_escapes(s):
 #------------------------------------------------------------------------------
 #        Major Function Definitions:
 #------------------------------------------------------------------------------
-def connect_to_kernel():
+def connect_to_kernel(kernel_type):
     """Create kernel manager from existing connection file."""
     from jupyter_client import KernelManager, find_connection_file
 
@@ -205,7 +216,7 @@ def connect_to_kernel():
     if connected:
         # Send command so that monitor knows vim is commected
         # send('"_vim_client"', store_history=False)
-        pid = set_pid() # Ask kernel for its PID
+        pid = get_pid(kernel_type)  # Ask kernel for its PID
         vim_echom('kernel connection successful! pid = {}'.format(pid),
                   style='Question')
     else:
@@ -251,12 +262,8 @@ def handle_messages():
     See also: <http://jupyter-client.readthedocs.io/en/stable/messaging.html>
     """
     io_pub = []
-    # lidong mod beg
-    # msgs = kc.iopub_channel.get_msgs(block=False)
-    import time
-    time.sleep(0.5)
     msgs = kc.iopub_channel.get_msgs()
-    # lidong mod end
+    # msgs = kc.iopub_channel.get_msgs(block=False)
     for msg in msgs:
         s = ''
         if 'msg_type' not in msg['header']:
@@ -266,7 +273,7 @@ def handle_messages():
             continue
         elif msg_type == 'stream':
             # TODO: alllow for distinguishing between stdout and stderr (using
-            # custom syntax markers in the vim-ipython buffer perhaps), or by
+            # custom syntax markers in the vim-jupyter buffer perhaps), or by
             # also echoing the message to the status bar
             s = strip_color_escapes(msg['content']['text'])
         elif msg_type == 'display_data':
@@ -325,7 +332,7 @@ def print_prompt(prompt, msg_id=None):
         except Empty:
             # if the kernel is waiting for input it's normal to get no reply
             if not kc.stdin_channel.msg_ready():
-                vim_echom("In[]: {} (no reply from IPython kernel)"\
+                vim_echom("In[]: {} (no reply from Jupyter kernel)"\
                           .format(prompt))
     else:
         vim_echom("In[]: {}".format(prompt))
@@ -338,7 +345,8 @@ def with_console(f):
     """
     def wrapper(*args, **kwargs):
         if not check_connection():
-            vim_echom('WARNING: Not connected to IPython!', 'WarningMsg')
+            vim_echom('WARNING: Not connected to Jupyter!' + \
+                  ' Run :JupyterConnect to find the kernel', style='WarningMsg')
             return
         monitor_console = bool(int(vim.vars.get('jupyter_monitor_console', 0)))
         isvplit = bool(int(vim.vars.get('jupyter_vsplit', 1)))
@@ -369,7 +377,7 @@ def run_command(cmd):
 
 @with_console
 @with_verbose
-def run_file(flags='', filename=''):
+def run_file_in_ipython(flags='', filename=''):
     """Run a given python file using ipython's %run magic."""
     ext = os.path.splitext(filename)[-1][1:]
     if ext in ('pxd', 'pxi', 'pyx', 'pyxbld'):
@@ -390,8 +398,8 @@ def send_range():
     """Send a range of lines from the current vim buffer to the kernel."""
     r = vim.current.range
     lines = "\n".join(vim.current.buffer[r.start:r.end+1])
-    msg_id = send(lines + "\n")
-    prompt = "range %d-%d "% (r.start+1, r.end+1)
+    msg_id = send(lines)
+    prompt = "range {:d}-{:d} ".format(r.start+1, r.end+1)
     return (prompt, msg_id)
 
 @with_console
@@ -438,7 +446,7 @@ def run_cell():
 def signal_kernel(sig=signal.SIGTERM):
     """
     Use kill command to send a signal to the remote kernel. This side steps the
-    (non-functional) ipython interrupt mechanisms.
+    (non-functional) jupyter interrupt mechanisms.
     Only works on posix.
     """
     # lidong mod beg
