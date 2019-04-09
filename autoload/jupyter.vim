@@ -143,8 +143,12 @@ function! jupyter#TerminateKernel(kill, ...) abort
     execute 'pythonx jupyter_vim.signal_kernel(jupyter_vim.signal.'.l:sig.')'
 endfunction
 
-function! jupyter#UpdateShell() abort 
-    pythonx jupyter_vim.update_console_msgs(1)
+function! jupyter#UpdateShell(isvsplit) abort 
+    if a:isvsplit
+        pythonx jupyter_vim.update_console_msgs(1)
+    else
+        pythonx jupyter_vim.update_console_msgs(0)
+    endif
 endfunction
 
 "----------------------------------------------------------------------------- 
@@ -207,7 +211,8 @@ function! jupyter#MakeStandardCommands()
     command! -buffer -count      JupyterSendCount       call jupyter#SendCount(<count>)
     command! -buffer -range -bar JupyterSendRange       <line1>,<line2>call jupyter#SendRange()
     command! -buffer -nargs=0    JupyterSendCell        call jupyter#SendCell()
-    command! -buffer -nargs=0    JupyterUpdateShell     call jupyter#UpdateShell()
+    command! -buffer -nargs=0    JupyterUpdateShell     call jupyter#UpdateShell(0)
+    command! -buffer -nargs=0    JupyterUpdateVShell    call jupyter#UpdateShell(1)
     command! -buffer -nargs=? -complete=dir  JupyterCd  call jupyter#JupyterCd(<f-args>)
     command! -buffer -nargs=? -bang  JupyterTerminateKernel  call jupyter#TerminateKernel(<bang>0, <f-args>)
     command! -buffer -nargs=* -complete=file
