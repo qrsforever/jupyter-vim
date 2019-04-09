@@ -143,12 +143,8 @@ function! jupyter#TerminateKernel(kill, ...) abort
     execute 'pythonx jupyter_vim.signal_kernel(jupyter_vim.signal.'.l:sig.')'
 endfunction
 
-function! jupyter#UpdateShell(isvsplit) abort 
-    if a:isvsplit
-        pythonx jupyter_vim.update_console_msgs(1)
-    else
-        pythonx jupyter_vim.update_console_msgs(0)
-    endif
+function! jupyter#UpdateShell() abort 
+    pythonx jupyter_vim.update_console_msgs(1)
 endfunction
 
 "----------------------------------------------------------------------------- 
