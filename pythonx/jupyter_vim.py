@@ -287,10 +287,7 @@ def handle_messages():
             s += msg['content']['code'].rstrip().replace('\n', '\n' + dots)
         elif msg_type == 'pyout' or msg_type == 'execute_result':
             s = prompt_out.format(line=msg['content']['execution_count'])
-            # lidong mod beg
-            #  s += msg['content']['data']['text/plain']
-            s += "\n" + msg['content']['data']['text/plain']
-            # lidong mod end
+            s += msg['content']['data']['text/plain']
         elif msg_type == 'pyerr' or msg_type == 'error':
             s = "\n".join(map(strip_color_escapes, msg['content']['traceback']))
         elif msg_type == 'input_request':
