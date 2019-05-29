@@ -457,6 +457,7 @@ def signal_kernel(sig=signal.SIGTERM):
         vim_echom(("pid {p:d} does not exist! " +
                    "Kernel may have been terminated by outside process")\
                   .format(p=pid), style='Error')
+        raise ProcessLookupError("not found kernel pid")
     except OSError as e:
         # vim_echom("signal #{v:d}, {n:s} failed to kill pid {p:d}"\
         #           .format(v=sig.value, n=sig.name, p=pid), style='Error')
