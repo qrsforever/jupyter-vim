@@ -53,7 +53,7 @@ function! jupyter#init_python() abort
             " Only catch errors from jupyter-vim itself here, so that for
             " unexpected Python exceptions the traceback will be shown
             echoerr 'Error: jupyter-vim failed to initialize Python: '
-                        \ . v:exception . ' (in ' . v:throwpoint . ')'
+                      \ . v:exception . ' (in ' . v:throwpoint . ')'
             " throw v:exception
         endtry
     endif

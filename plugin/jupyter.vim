@@ -11,9 +11,13 @@ if exists("g:loaded_jupyter_vim") || !has('pythonx') || &cp
     finish
 endif
 
-if !jupyter#init_python()
+try
+    if !jupyter#init_python()
+        finish
+    endif
+catch
     finish
-endif
+endtry
 
 "-----------------------------------------------------------------------------
 "        Configuration: {{{
