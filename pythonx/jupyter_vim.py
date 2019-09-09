@@ -18,13 +18,19 @@ import signal
 import sys
 
 import textwrap
-from queue import Empty
+try:
+    from queue import Empty
+except ImportError:
+    from Queue import Empty
 
 _install_instructions = """You *must* install the jupyter package into the
 Python that your vim is linked against. If you are seeing this message, this
 usually means either: 
-    (1) installing Jupyter using the system Python that vim is using, or 
-    (2) recompiling Vim against the Python where you already have Jupyter
+    (1) configuring vim to automatically load a virtualenv that has Jupyter
+        installed and whose Python interpreter is the same version that your
+        vim is compiled against
+    (2) installing Jupyter using the system Python that vim is using, or
+    (3) recompiling Vim against the Python where you already have Jupyter
         installed. 
 This is only a requirement to allow Vim to speak with a Jupyter kernel using
 Jupyter's own machinery. It does *not* mean that the Jupyter instance with
@@ -34,13 +40,13 @@ Python.
 
 try:
     import jupyter
-except ImportError:
-    raise ImportError("Could not find kernel. " + _install_instructions)
+except ImportError as e:
+    raise ImportError("Could not find kernel. " + _install_instructions, e)
 
 try:
     import vim
-except ImportError:
-    raise ImportError('vim module only available within vim!')
+except ImportError as e:
+    raise ImportError('vim module only available within vim!', e)
 
 #------------------------------------------------------------------------------
 #        Read global configuration variables
@@ -62,7 +68,9 @@ def vim_echom(arg, style="None"):
     """
     try:
         vim.command("echohl {}".format(style))
-        vim.command("echom \"{}\"".format(arg.replace('\"', '\\\"')))
+        messages = arg.split('\n')
+        for msg in messages:
+            vim.command("echom \"{}\"".format(msg.replace('\"', '\\\"')))
         vim.command("echohl None")
     except vim.error:
         print("-- {}".format(arg))
@@ -74,12 +82,15 @@ def check_connection():
     """Check that we have a client connected to the kernel."""
     return kc.hb_channel.is_beating() if kc else False
 
+def warn_no_connection():
+    vim_echom('WARNING: Not connected to Jupyter!' + \
+                '\nRun :JupyterConnect to find the kernel', style='WarningMsg')
+
 # if module has not yet been imported, define global kernel manager, client and
 # kernel pid. Otherwise, just check that we're connected to a kernel.
 if all([x in globals() for x in ('kc', 'pid', 'send')]):
     if not check_connection():
-        vim_echom('WARNING: Not connected to Jupyter!' + \
-                  ' Run :JupyterConnect to find the kernel', style='WarningMsg')
+        warn_no_connection()
 else:
     kc = None
     pid = None
@@ -342,8 +353,7 @@ def with_console(f):
     """
     def wrapper(*args, **kwargs):
         if not check_connection():
-            vim_echom('WARNING: Not connected to Jupyter!' + \
-                  ' Run :JupyterConnect to find the kernel', style='WarningMsg')
+            warn_no_connection()
             return
         monitor_console = bool(int(vim.vars.get('jupyter_monitor_console', 0)))
         isvplit = bool(int(vim.vars.get('jupyter_vsplit', 1)))
